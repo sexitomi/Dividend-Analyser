@@ -23,6 +23,7 @@ class UserScreenController: UIViewController {
     
     /* User Data Manager */
     var FirebaseClient : FirebaseClient?
+    var client = Client()
     
     /* IBActions and button functions */
     @IBAction func signOut() {
@@ -40,7 +41,7 @@ class UserScreenController: UIViewController {
         super.viewDidLoad()
         
         // Do any additional setup after loading the view.
-        
+        self.client.getMeSomeData("AAPL")
         if let userDisplay = User!.displayName {
             self.userGreet.text = "Hello, \(String(describing: userDisplay))"
             
