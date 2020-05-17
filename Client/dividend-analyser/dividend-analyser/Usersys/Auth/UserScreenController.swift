@@ -20,6 +20,7 @@ class UserScreenController: UIViewController {
     var User : User?
     var authResult : AuthDataResult?
     var handle : AuthStateDidChangeListenerHandle?
+    var transactions : [[String]] = []
     
     /* User Data Manager */
     var FirebaseClient : FirebaseClient?
@@ -40,45 +41,25 @@ class UserScreenController: UIViewController {
         super.viewDidLoad()
         
         // Do any additional setup after loading the view.
-        
-        if let userDisplay = User!.displayName {
-            self.userGreet.text = "Hello, \(String(describing: userDisplay))"
-            
-            let transactions = ["\(String(describing: self.User!.displayName!))", "Login"]
-             self.FirebaseClient?.uploadTransactionToUser(transaction: transactions) {
-                 (result) in
-                 if result == true {
-                     print("Operation successful. (view)")
-                 }
-                 else {
-                     print("Operation failed. (view)")
-                 }
-             }
-        }
-        else {
-            self.userGreet.text = "Address: \(String(describing: User!.email!))"
-            
-            let transactions = ["\(String(describing: self.User!.uid))", "Login"]
-             self.FirebaseClient?.uploadTransactionToUser(transaction: transactions) {
-                 (result) in
-                 if result == true {
-                     print("Operation successful. (view)")
-                 }
-                 else {
-                     print("Operation failed. (view)")
-                 }
-             }
-        }
+        self.loadData()
         
     }
     
     @IBAction func unwind(unwindSegue: UIStoryboardSegue) {
-        /* This can be empty, presence required */
+        if let stocksSourceController = unwindSegue.source as? AddStocksController {
+            self.transactions = stocksSourceController.portofolio
+        }
+        else if let portofolioController = unwindSegue.source as? UserPortofolioController {
+            if portofolioController.dividendValue != 0 {
+                self.amountLabel.text = "$\(portofolioController.dividendValue)"
+            }
+        }
     }
     
     /* Segue Performing Methodology */
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if(segue.identifier == "moveToUserScreen"){
+        /* Should add segue-specific for Portofolio transactions */
+        if(segue.identifier == "moveToUserScreen") {
             let settingsVC = segue.destination as! SettingsScreenController
             if let currentUser = Auth.auth().currentUser { // The user is logged in on the current session
                 settingsVC.User = currentUser
@@ -86,6 +67,42 @@ class UserScreenController: UIViewController {
                 settingsVC.handle = self.handle!
             }
         }
+        else if segue.identifier == "moveToPortofolio" {
+            let portofolioVC = segue.destination as! UserPortofolioController
+            if Auth.auth().currentUser != nil {
+                portofolioVC.portofolioDataFromFirebase = self.transactions
+            }
+        }
+        else if segue.identifier == "moveToAddStocks" {
+            let addStocksVC = segue.destination as! AddStocksController
+            if Auth.auth().currentUser != nil {
+                addStocksVC.portofolio = self.transactions
+                addStocksVC.User = self.User!
+            }
+        }
+    }
+    
+    /* Loads all the user required data from Firebase */
+    func loadData() {
+        
+        if let userDisplay = User!.displayName { // User set up a username already
+            self.userGreet.text = "Hello, \(String(describing: userDisplay))"
+        }
+        else { // else use their email for the user screen
+            self.userGreet.text = "\(String(describing: User!.email!))"
+        }
+        
+        /* Download user portofolio data from Firebase Database */
+        print(self.FirebaseClient!.downloadUserTransactions(completion: {
+            (result) in
+            if result.count > 0 {
+                self.transactions = result
+            }
+            else {
+                print("Nothing received from the download.")
+            }
+        }))
+        
     }
     
     
