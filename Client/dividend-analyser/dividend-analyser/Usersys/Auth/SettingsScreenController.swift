@@ -20,15 +20,15 @@ class SettingsScreenController: UIViewController {
     
     /* View Side Variables */
     var User : User?
-    var authData: AuthDataResult?
-    var handle: AuthStateDidChangeListenerHandle?
+    
+    /* Managers */
+    var firebaseClient : FirebaseClient?
     
     /* IBActions and buttons events */
     @IBAction func submitChanges() {
         
         /* Variables which define what changes we have to submit to Firebase */
         var usernameUpdate = false, emailUpdate = false, passUpdate = false
-        var madeChanges = false
         
         /* The values which have to be submitted to Firebase */
         var username : String?
@@ -59,7 +59,7 @@ class SettingsScreenController: UIViewController {
                 (error) in
                 if error == nil {
                     print("Username changed successfully.")
-                    madeChanges = true
+                    
                     /* UI Updates */
                     self.changesResultLabel.text = "Username changed successfully."
                     self.changesResultLabel.textColor = UIColor(ciColor: .green)
@@ -79,13 +79,14 @@ class SettingsScreenController: UIViewController {
                 (error) in
                 if error == nil {
                     print("Email changed successfully.")
-                    madeChanges = true
+                    
                     /* UI Updates */
                     self.changesResultLabel.text = "Email changed successfully."
                     self.changesResultLabel.textColor = UIColor(ciColor: .green)
                 }
                 else {
                     print("error = \(String(describing: error))")
+                    
                     /* UI Updates */
                     self.changesResultLabel.text = "An error occured"
                     self.changesResultLabel.textColor = UIColor(ciColor: .red)
@@ -99,7 +100,6 @@ class SettingsScreenController: UIViewController {
                 (error) in
                 if error == nil {
                     print("Password changed successfully.")
-                    madeChanges = true
                     
                     self.changesResultLabel.text = "Password changed successfully."
                     self.changesResultLabel.textColor = UIColor(ciColor: .green)
@@ -112,27 +112,57 @@ class SettingsScreenController: UIViewController {
                 }
             }
         }
+    }
+    
+    /* Deletes current user from Firebase and signs out */
+    @IBAction func deleteCurrentUser() {
         
-        /*
-         if madeChanges {
-         self.changesResultLabel.text = "Changes submitted successfully."
-         self.changesResultLabel.textColor = UIColor(ciColor: .green)
-         }
-         else {
-         self.changesResultLabel.text = "No changes submitted."
-         self.changesResultLabel.textColor = UIColor(ciColor: .red)
-         }
-         */
+        /* Displays an alert to make sure that the user wants to delete their account */
+        let alert = UIAlertController(title: "Are you sure you want to delete your account ?", message: "By deleting your account, all your data will be erased from the system.", preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: "Yes", style: .default, handler: { // if the user chooses Yes, process the deletion
+            _ in
+            self.firebaseClient?.deleteUserData {
+                (result) in
+                if result {
+                    // Signing out and moving to Root
+                    self.view.window!.rootViewController?.dismiss(animated: true, completion: nil)
+                }
+                else {
+                    self.changesResultLabel.text = "An error occured while deleting your account data."
+                    self.changesResultLabel.textColor = UIColor(ciColor: .red)
+                }
+            }
+        }))
+        alert.addAction(UIAlertAction(title: "No", style: .cancel, handler: { // else close
+            _ in
+            print("Account deletion interrupted.")
+        }))
+        
+        self.present(alert, animated: true)
         
     }
     
     override func viewDidLoad() {
+        
+        /* Drawing a Horizontal Line under modal header */
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: 15, y: 125))
+        path.addLine(to: CGPoint(x: 360, y: 125))
+        
+        let shapeLayer = CAShapeLayer()
+        shapeLayer.path = path.cgPath
+        shapeLayer.strokeColor = UIColor.darkGray.cgColor
+        shapeLayer.lineWidth = 1.0
+        
+        view.layer.addSublayer(shapeLayer)
+        
         super.viewDidLoad()
         
-        // Do any additional setup after loading the view.
+        self.firebaseClient = FirebaseClient(user: self.User!)
         
         //Looks for single or multiple taps.
-        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: "dismissKeyboard")
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.dismissKeyboard))
         
         view.addGestureRecognizer(tap)
     }
@@ -143,20 +173,8 @@ class SettingsScreenController: UIViewController {
         view.endEditing(true)
     }
     
-    
     @IBAction func unwind(unwindSegue: UIStoryboardSegue) {
         /* This can be empty, presence required */
     }
-    
-    
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destination.
-     // Pass the selected object to the new view controller.
-     }
-     */
     
 }

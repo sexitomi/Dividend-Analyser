@@ -15,7 +15,7 @@ public class SymbolHelper {
     private let csvFile : String = "companylist"
     
     init() {
-        if let csvFileURL = Bundle.main.url(forResource: self.csvFile, withExtension: "csv") {
+        if let csvFileURL = Bundle.main.url(forResource: self.csvFile, withExtension: "csv") { // finding the csv list of all the symbols in the App Bundle
             print(csvFileURL)
             do { // try to read the data at the file as CSV in Swift
                 self.csv = try CSV(url: csvFileURL)
@@ -38,11 +38,28 @@ public class SymbolHelper {
         
         let uppercasedCurrent = current.uppercased()
         
+        var similarSymbols : [String] = []
+        
+        /* Gathering all possible matches */
         for symbol in csvNamedColumns["Symbol"]! {
             if symbol.contains(uppercasedCurrent) {
-                print(symbol)
-                completion(symbol)
+                similarSymbols.append(symbol)
             }
+        }
+        
+        /* Checking if there is an exact match */
+        for symbol in similarSymbols {
+            if symbol == uppercasedCurrent {
+                completion(uppercasedCurrent)
+            }
+        }
+        
+        /* If not, and if there are any matches, handle the first record */
+        if similarSymbols.count != 0 {
+            completion(similarSymbols[0])
+        }
+        else {
+            completion("...")
         }
         
     }

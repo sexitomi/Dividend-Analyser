@@ -35,13 +35,15 @@ public class Client
     }
     
     /**
-     *@param sufix is given by the user
+     * @param sufix is given by the user
      * @return a List of Strings containing data found at the requested URL
      */
-    public func getDataFrom(_ sufix : String, completion: @escaping ([String]) -> Void)
+    public func getDataFrom(_ sufix : String, _ number : Double, completion: @escaping ([String]) -> Void)
     {
-        let newURL : String = serverURL + "/stocks/" + sufix
+        let newURL : String = serverURL + "/stocks/" + sufix + "?number=\(number)"
+        
         print(newURL)
+        
         var newData : Data?
         
         // requesting data from newURL
@@ -50,7 +52,6 @@ public class Client
                 (response) in
                 switch response.result {
                 case .success:
-                    
                     //converting response from Data type to String type
                     newData = response.data
                     let jsonString = String(data: newData!, encoding: .utf8)
@@ -62,11 +63,12 @@ public class Client
                         for (_, subJson) : (String, JSON) in json {
                             dataList.append(subJson.stringValue)
                         }
+                        
                         completion(dataList)
                     }
                 case .failure(let error):
-                    print(error)
-                    print("No data was found.")
+                    print("error = \(error)")
+                    completion([])
                 }
         }
     }

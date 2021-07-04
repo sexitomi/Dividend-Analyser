@@ -1,5 +1,6 @@
 /* -------------- Requires & Port init -------------- */
 
+require('dotenv').config();
 const express = require('express');
 
 const app = express();
@@ -31,7 +32,7 @@ app.get('/stocks/:symbol', (req, res) => { // Getting the list of all required s
 
 	let client = new Client(); // this will download the requested financial data
 
-	let result = client.FinancialData(req.params.symbol, (err, resp) => { // callback function
+	let result = client.FinancialData(req.params.symbol, req.query.number, (err, resp) => { // callback function
 
 		if (err) { // display error
 			res.send(err);
